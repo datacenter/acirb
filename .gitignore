@@ -1,0 +1,4 @@
+lib/acirb/*.rb
+*.gem
+coverage
+pysdk
