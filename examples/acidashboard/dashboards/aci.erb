@@ -1,0 +1,53 @@
+<% content_for :title do %>Cisco ACI Dashboard<% end %>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+   google.load("visualization", "1", {packages:["corechart"]});
+</script>
+<script type='text/javascript'>
+$(function() {
+  Dashing.widget_base_dimensions = [280, 300]
+  Dashing.numColumns = 5
+});
+</script>
+
+
+<div class="gridster">
+  <ul>
+    <li data-row="1" data-col="1" data-sizex="1" data-sizey="1">
+      <div data-id="ep_chart" data-view="GooglePie"  data-title="Endpoint Types"></div>
+    </li>
+
+    <li data-row="1" data-col="1" data-sizex="1" data-sizey="1">
+      <div data-id="latest_endpoints" data-view="List" data-unordered="true" data-title="Newest Endpoints"></div>
+    </li>
+
+    <li data-row="1" data-col="1" data-sizex="1" data-sizey="1">
+      <div data-id="apic_endpoints" data-view="Number" data-title="Endpoints" data-moreinfo="Endpoints attached to fabric"></div>
+    </li>
+
+    <li data-row="1" data-col="1" data-sizex="1" data-sizey="1">
+      <div data-id="apic_freeports" data-view="Number" data-title="Free ports" data-moreinfo="Unused interfaces" style="background-color:#00FF00"></div>
+    </li>
+
+    <li data-row="1" data-col="1" data-sizex="1" data-sizey="1">
+      <div data-id="apic_actrlrule" data-view="Number" data-title="ACL Rules" data-moreinfo="Programmed ACL Rules" style="background-color:#C5860F"></div>
+    </li>
+
+    <li data-row="1" data-col="1" data-sizex="1" data-sizey="1">
+      <div data-id="apic_packets_tx" data-view="Number" data-title="TX" data-moreinfo="Fabric Bytes Per Second TX" style="background-color:#FF0000"></div>
+    </li>
+
+    <li data-row="1" data-col="1" data-sizex="1" data-sizey="1">
+      <div data-id="apic_packets_rx" data-view="Number" data-title="RX" data-moreinfo="Fabric Bytes Per Second RX" style="background-color:#79FF00"></div>
+    </li>
+
+    <li data-row="1" data-col="1" data-sizex="1" data-sizey="1">
+      <div data-id="apic_health" data-view="Graph" data-title="Fabric Health" data-moreinfo="Overall Fabric Healthscore" style="background-color:#ff9618"></div>
+    </li>
+
+    <li data-row="1" data-col="1" data-sizex="2" data-sizey="1">
+      <div data-id="apic_thrupt" data-view="Graph" data-title="Fabric Throughput" data-moreinfo="Total Sent and Received Fabric Bytes Per Second" style="background-color:#2222ff"></div>
+    </li>
+
+  </ul>
+</div>

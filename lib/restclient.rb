@@ -10,6 +10,7 @@ module ACIrb
 
   class RestClient
     attr_accessor :format, :user, :password, :baseurl, :debug, :refresh_time
+    attr_reader :auth_cookie
     # Desc: initialize a rest client
     # Returns: does not return anything, but will raise an exception
     #   if authentication fails
@@ -29,16 +30,15 @@ module ACIrb
       @password = options[:password]
 
       @client = HTTPClient.new
+
       @client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE \
-        unless options[:verify]
+        unless options[:verify] && uri.scheme == 'https'
 
       @debug = options[:debug]
 
-      if @user && @password
-        authenticate
-      else
-        @auth_cookie = ''
-      end
+      @auth_cookie = ''
+
+      authenticate if @user && @password
     end
 
     # Desc: authenticates the REST session with the APIC and receives an

@@ -7,7 +7,7 @@ module ACIrb
   class Query
     attr_accessor :subtree, :class_filter, :query_target, :subtree_class_filter,
                   :prop_filter, :subtree_prop_filter, :subtree_include,
-                  :page_size, :include_prop
+                  :page_size, :include_prop, :subscribe, :sort_order
 
     def make_options
       query_params = []
@@ -28,8 +28,12 @@ module ACIrb
         if @subtree_include
       query_params.push('page-size=%s' % @page_size) \
         if @page_size
+      query_params.push('order-by=%s' % @sort_order) \
+        if @sort_order
       query_params.push('rsp-prop-include=%s' % @include_prop) \
         if @include_prop
+      query_params.push('subscription=yes') \
+        if @subscribe
 
       if query_params.length > 0
         '?' + query_params.join('&')

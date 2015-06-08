@@ -2,3 +2,4 @@ lib/acirb/*.rb
 *.gem
 coverage
 pysdk
+env.sh
