@@ -33,6 +33,7 @@ tenant = ACIrb::FvTenant.new(uni, name: 'NewTenant')
 tenant.create(rest)
 ```
 
+For more examples, please check out the [examples](examples) folder
 # Building
 Building is likely something most users won't need to do, however if you are adventurous you can give it a try. It consists of three steps:
 
