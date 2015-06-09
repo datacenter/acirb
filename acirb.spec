@@ -8,10 +8,9 @@ Gem::Specification.new do |s|
   s.description = 'Cisco APIC Ruby SDK'
   s.authors     = ['Paul Lesiak']
   s.email       = 'palesiak@cisco.com'
-#  s.files       = ['lib/acirb.rb']
   s.files       = Dir.glob('{lib}/*')
   s.files       = Dir.glob('{lib}/**/*')
-  s.homepage    = 'http://www.cisco.com'
+  s.homepage    = 'http://github.com/datacenter/acirb'
   s.license     = 'Private'
   s.add_runtime_dependency 'httpclient', '~> 2.6', '>= 2.6.0.1'
   s.add_runtime_dependency 'nokogiri'
