@@ -9,8 +9,16 @@ module ACIrb
   # REST client end point implementation
 
   class RestClient
-    attr_accessor :format, :user, :password, :baseurl, :debug, :refresh_time
-    attr_reader :auth_cookie
+    attr_accessor :format, :user, :password, :baseurl, :debug, :verify
+    attr_reader :auth_cookie, :refresh_time
+
+    class ApicAuthenticationError < StandardError
+    end
+
+    class ApicErrorResponse < StandardError
+    end
+
+
     # Desc: initialize a rest client
     # Returns: does not return anything, but will raise an exception
     #   if authentication fails
@@ -23,11 +31,13 @@ module ACIrb
     #   verify : true or false. verify the SSL certificate. Defaults to disabled
     def initialize(options = {})
       uri = URI.parse(options[:url])
-      @baseurl = '%s://%s' % [uri.scheme, uri.host]
+      @baseurl = '%s://%s:%s' % [uri.scheme, uri.host, uri.port]
       @format = options[:format] ? options[:format] : 'xml'
 
       @user = options[:user]
       @password = options[:password]
+
+      @verify = options[:verify]
 
       @client = HTTPClient.new
 
@@ -40,6 +50,7 @@ module ACIrb
 
       authenticate if @user && @password
     end
+
 
     # Desc: authenticates the REST session with the APIC and receives an
     #   auth_cookie/token
@@ -56,7 +67,7 @@ module ACIrb
       response = @client.post(post_url, body: builder.to_xml)
       puts 'POST RESPONSE: ', response.body if @debug
       doc = Nokogiri::XML(response.body)
-      fail 'Authentication error(%s): %s' % [doc.at_css('error')['code'], doc.at_css('error')['text']] \
+      raise ApicAuthenticationError, 'Authentication error(%s): %s' % [doc.at_css('error')['code'], doc.at_css('error')['text']] \
         if doc.at_css('error')
       @auth_cookie = doc.at_css('aaaLogin')['token']
       @refresh_time = doc.at_css('aaaLogin')['refreshTimeoutSeconds']
@@ -68,13 +79,13 @@ module ACIrb
       response = @client.get(get_url)
       puts 'GET RESPONSE: ', response.body if @debug
       doc = Nokogiri::XML(response.body)
-      fail 'Authentication error(%s): %s' % [doc.at_css('error')['code'], doc.at_css('error')['text']] \
+      raise ApicAuthenticationError, 'Authentication error(%s): %s' % [doc.at_css('error')['code'], doc.at_css('error')['text']] \
         if doc.at_css('error')
       @auth_cookie = doc.at_css('aaaLogin')['token']
       @refresh_time = doc.at_css('aaaLogin')['refreshTimeoutSeconds']
     end
 
-    # Desc: Perform a Net::HTTP::Post to the REST interface with the
+    # Desc: Perform an HTTP POST to the REST interface with the
     #   parameters provided
     # Returns: an array of managed object containing the parsed result
     # Parameters: a single hash array is accepted, with the following keys:
@@ -102,7 +113,7 @@ module ACIrb
       parse_response(response)
     end
 
-    # Desc: Perform a Net::HTTP::Get to the REST interface with the
+    # Desc: Perform a HTTP GET to the REST interface with the
     #   parameters provided
     # Returns: an array of managed object containing the parsed result
     # Parameters: a single hash array is accepted, with the following keys:
@@ -121,11 +132,11 @@ module ACIrb
 
     def parse_error(doc)
       if format == 'xml'
-        fail 'Error response from APIC (%s): "%s"' % \
+        raise ApicErrorResponse, 'Error response from APIC (%s): "%s"' % \
           [doc.at_css('error')['code'], doc.at_css('error')['text']] \
           if doc.at_css('error')
       elsif format == 'json'
-        fail 'Error response from APIC (%s): "%s"' % \
+        raise ApicErrorResponse, 'Error response from APIC (%s): "%s"' % \
           [doc['imdata'][0]['error']['attributes']['code'].to_s, \
            doc['imdata'][0]['error']['attributes']['text'].to_s] \
            if doc['imdata'].length > 0 && doc['imdata'][0].include?('error')
@@ -163,8 +174,38 @@ module ACIrb
       end
     end
 
-    def query(query)
-      query_uri = query.uri(@format)
+    def query(query_obj)
+      query_uri = query_obj.uri(@format)
+      get(url: query_uri)
+    end
+
+    def subscribe(query_obj)
+      query_obj.subscribe = 'yes'
+      query_uri = query_obj.uri(@format)
+      
+      get_url = URI.encode(@baseurl.to_s + query_uri.to_s)
+
+      puts 'GET REQUEST', get_url if @debug
+      response = @client.get(get_url)
+      puts 'GET RESPONSE: ', response.body if @debug
+
+      if format == 'xml'
+        xml_data = response.body
+        doc = Nokogiri::XML(xml_data)
+        parse_error(doc)
+        subscriptionId = doc.at_css('imdata')['subscriptionId']
+      elsif format == 'json'
+        json_data = response.body
+        doc = JSON.parse(json_data)
+        parse_error(doc)
+        subscriptionId = doc['subscriptionId']
+      end
+
+      subscriptionId
+    end
+
+    def refresh_subscription(subscription_id)
+      query_uri = '/api/subscriptionRefresh.%s?id=%s' % [@format, subscription_id]
       get(url: query_uri)
     end
 

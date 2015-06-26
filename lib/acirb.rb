@@ -6,6 +6,7 @@ require 'naming'
 require 'restclient'
 require 'version'
 require 'query'
+require 'events'
 
 module ACIrb
 end

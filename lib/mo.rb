@@ -111,7 +111,10 @@ module ACIrb
     def to_hash
       h = {}
       h[mo_type.to_s] = {}
-      h[mo_type.to_s]['attributes'] = @attributes
+      h[mo_type.to_s]['attributes'] = {}
+      @attributes.each do |key, value|
+        h[mo_type.to_s]['attributes'][key.to_s] = value if value.to_s != ''
+      end  
       h[mo_type.to_s]['attributes']['dn'] = dn
       h[mo_type.to_s]['children'] = [] if children.length > 0
       @children.each do |child|
