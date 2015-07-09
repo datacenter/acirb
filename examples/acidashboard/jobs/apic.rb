@@ -8,7 +8,7 @@ password = 'password'
 login_time = Time.new.to_f
 puts 'Connecting to APIC %s' % apicuri
 rest = ACIrb::RestClient.new(url: apicuri, user: username,
-                             password: password, format: 'json')
+                             password: password, format: 'json', debug: false)
 
 health_points = []
 (1..100).each do |i|
@@ -100,12 +100,13 @@ def update_endpoint_chart(rest)
 end
 
 def get_int_stats(rest)
+  start = Time.new.to_f
   cq = ACIrb::ClassQuery.new('l1PhysIf')
   cq.subtree_include = 'stats'
   cq.subtree_class_filter = 'eqptEgrTotal5min,eqptIngrTotal5min'
   cq.prop_filter = 'eq(l1PhysIf.switchingSt,"enabled")'
   interfaces = rest.query(cq)
-  puts '%d interfaces returned stats' % interfaces.length
+  puts '%d interfaces returned stats. %.2f seconds' % [interfaces.length, (Time.new.to_f - start)]
   interfaces
 end
 
@@ -113,11 +114,15 @@ def update_unicast_per_second(last_tx, last_rx, interfaces)
   tx = 0
   rx = 0
   interfaces.each do |interface|
-    interface.CDeqptEgrTotal5min.each do |egr|
-      tx += egr.bytesRate.to_i
-    end
-    interface.CDeqptIngrTotal5min.each do |ingr|
-      rx += ingr.bytesRate.to_i
+    begin
+      interface.CDeqptEgrTotal5min.each do |egr|
+        tx += egr.bytesRate.to_i
+      end
+      interface.CDeqptIngrTotal5min.each do |ingr|
+        rx += ingr.bytesRate.to_i
+      end
+    rescue => e
+      puts 'Exception %s' % e
     end
   end
 
@@ -129,12 +134,17 @@ end
 def update_thrupt(thrupt_points, last_x, interfaces)
   tx = 0
   rx = 0
+
   interfaces.each do |interface|
-    interface.CDeqptEgrTotal5min.each do |egr|
-      tx += egr.bytesRate.to_i
-    end
-    interface.CDeqptIngrTotal5min.each do |ingr|
-      rx += ingr.bytesRate.to_i
+    begin
+      interface.CDeqptEgrTotal5min.each do |egr|
+        tx += egr.bytesRate.to_i
+      end
+      interface.CDeqptIngrTotal5min.each do |ingr|
+        rx += ingr.bytesRate.to_i
+      end
+    rescue => e
+      puts 'Exception %s' % e
     end
   end
 
@@ -170,13 +180,17 @@ scheduler.every '%ds' % (rest.refresh_time.to_i / 2) do
   login_time = Time.new.to_f
 end
 
-scheduler.every '20s' do
-  puts 'Updating interface stats'
-  interfaces = get_int_stats(rest)
-  last_thrupt_x, thrupt_points = update_thrupt(thrupt_points,
-                                               last_thrupt_x, interfaces)
-  last_tx, last_rx = update_unicast_per_second(last_tx, last_rx,
-                                               interfaces)
+Thread.new do
+  loop do
+
+    puts 'Updating interface stats'
+    interfaces = get_int_stats(rest)
+    last_thrupt_x, thrupt_points = update_thrupt(thrupt_points,
+                                                last_thrupt_x, interfaces)
+    last_tx, last_rx = update_unicast_per_second(last_tx, last_rx,
+                                                interfaces)
+    sleep 3
+  end
 end
 
 scheduler.every '10s' do
