@@ -182,13 +182,12 @@ end
 
 Thread.new do
   loop do
-
     puts 'Updating interface stats'
     interfaces = get_int_stats(rest)
     last_thrupt_x, thrupt_points = update_thrupt(thrupt_points,
-                                                last_thrupt_x, interfaces)
+                                                 last_thrupt_x, interfaces)
     last_tx, last_rx = update_unicast_per_second(last_tx, last_rx,
-                                                interfaces)
+                                                 interfaces)
     sleep 3
   end
 end

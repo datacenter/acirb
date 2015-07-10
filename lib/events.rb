@@ -12,6 +12,12 @@ module ACIrb
   class EventChannel
     attr_accessor :rest
 
+    class ApicWebSocketRecvTimeout < StandardError
+    end
+
+    class WebSocketNoHandshake < StandardError
+    end
+
     def initialize(rest, _options = {})
       @rest = rest
 
@@ -33,6 +39,7 @@ module ACIrb
       @socket = TCPSocket.new(@handshake.host, uri.port)
 
       if secure
+        puts 'connecting over secure websocket'
         ctx = OpenSSL::SSL::SSLContext.new
 
         ctx.verify_mode = OpenSSL::SSL::VERIFY_NONE unless rest.verify
@@ -65,7 +72,7 @@ module ACIrb
     end
 
     def send(data, type = :text)
-      fail 'no handshake!' unless @handshaked
+      fail WebSocketNoHandshake unless @handshaked
 
       data = WebSocket::Frame::Outgoing::Client.new(
         version: @handshake.version,
@@ -76,16 +83,19 @@ module ACIrb
       @socket.flush
     end
 
-    # WAIT_EXCEPTIONS  = [Errno::EAGAIN, Errno::EWOULDBLOCK]
-    # WAIT_EXCEPTIONS << IO::WaitReadable if defined?(IO::WaitReadable)
+    def receive(timeout = nil)
+      fail WebSocketNoHandshake unless @handshaked
 
-    def receive
-      begin
-        data = @socket.read_nonblock(1024)
-      rescue Errno::EAGAIN, Errno::EWOULDBLOCK, (IO::WaitReadable if defined?(IO::WaitReadable))
-      # rescue *WAIT_EXCEPTIONS
-        readable, writable, error = IO.select([@socket], nil, nil, nil)
-        retry
+      readable, writable, error = IO.select([@socket], nil, nil, timeout)
+      if readable
+        begin
+          data = @socket.read_nonblock(1024)
+        rescue Errno::EAGAIN, Errno::EWOULDBLOCK, (IO::WaitReadable if defined?(IO::WaitReadable)) => e
+          puts '%s, retrying' % e
+          retry
+        end
+      else
+        fail ApicWebSocketRecvTimeout, 'Timeout for websocket read'
       end
       @frame << data
 
@@ -97,7 +107,7 @@ module ACIrb
         end
         messages << message.to_s
       end
-      # messages
+
       events = []
       messages.each do |msg|
         events += MoEvent.parse_event(self, msg.to_s)
@@ -107,8 +117,6 @@ module ACIrb
 
     def close
       @socket.close
-    rescue IOError => error
-      raise error.message
     end
   end
 
@@ -123,18 +131,31 @@ module ACIrb
       if event_channel.rest.format == 'xml'
         doc = Nokogiri::XML(event_str)
         subscription_id = doc.at_css('imdata')['subscriptionId']
-
+        puts event_str
         doc.root.elements.each do |xml_obj|
           event = {
-            :type => xml_obj.attributes['status'].to_s,
-            :properties => Hash[xml_obj.attributes.map { |k, str| [k, str.value.to_s] }],
-            :class => xml_obj.name,
-            :subscription_id => subscription_id
+            type: xml_obj.attributes['status'].to_s,
+            properties: Hash[xml_obj.attributes.map { |k, str| [k, str.value.to_s] }],
+            class: xml_obj.name,
+            subscription_id: subscription_id
           }
           events.push(event)
         end
       elsif event_channel.rest.format == 'json'
-        fail 'JSON not implemented'
+        doc = JSON.parse(event_str, symbolize_names: false)
+        subscription_id = doc['subscriptionId']
+        imdata = doc['imdata']
+        imdata.each do |obj|
+          cls = obj.keys[0]
+          event = {
+            type: obj[cls]['attributes']['status'].to_s,
+            properties: Hash[obj[cls]['attributes'].map { |k, str| [k, str.to_s] }],
+            class: cls,
+            subscription_id: subscription_id[0]
+          }
+          events.push(event)
+        end
+
       end
 
       events

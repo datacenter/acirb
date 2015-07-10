@@ -4,6 +4,7 @@ import pprint
 import os
 import sys
 import re
+import time
 from string import Template
 from collections import OrderedDict
 
@@ -25,7 +26,21 @@ def getChildren(pyClassDict):
 
 
 def getProps(pyClassDict):
-    return [x[0] for x in pyClassDict['_props'].items()]
+    # {
+    #     'test' => {'isAdmin' => true}, 'test2' => {'isAdmin'=> true}
+    # }
+    prop_entries = []
+    flags_list = ['isAdmin', 'isImplicit', 'isCreateOnly', 'isDn', 'isRn', 'isExplicit']
+
+    for prop, flags in pyClassDict['_props'].items():
+        propflags = []
+        for flag in flags_list:
+            if hasattr(flags, '_{}'.format(flag)):
+                bo0l = 'true' if getattr(flags, '_{}'.format(flag)) else 'false'
+                propflags.append("'{}' => {}".format(flag, bo0l))
+        prop_entries.append("'{}' => {{ {} }}".format(prop, ', '.join(propflags)))
+    return '{{ {} }}'.format(',\n'.join(prop_entries))
+    # entries = ["%s => {".format(cls, props.get('isAdmin')) for cls,props in pyClassDict['_props'].items()]
 
 
 def getNamingProps(pyClassDict):
@@ -90,6 +105,8 @@ def getClassName(pyClassDict):
 def getRnFormat(pyClassDict):
     return pyClassDict['_rnFormat']
 
+def getReadOnly(pyClassDict):
+    return 'true' if pyClassDict['_isReadOnly'] else 'false'
 
 def getRubyClassMap(classMap):
     rubyCode = Template("""# auto-generated code
@@ -108,7 +125,6 @@ end
 
     return rubyCode.substitute(vals)
 
-
 def getRubyClass(pyClassDict):
     rubyCode = Template("""  class $rubyClassName < MO
     @class_name = '$objectName'
@@ -121,6 +137,7 @@ def getRubyClass(pyClassDict):
     @child_classes = $children
     @label = '$label'
     @naming_props = $namingProps
+    @read_only = $readOnly
 
     def rn
       $rn
@@ -139,6 +156,7 @@ def getRubyClass(pyClassDict):
                 label=getLabel(pyClassDict),
                 namingProps=getNamingProps(pyClassDict),
                 classNameShort=getClassName(pyClassDict).replace('.', ''),
+                readOnly=getReadOnly(pyClassDict),
                 )
     return rubyCode.substitute(vals)
 
@@ -259,8 +277,10 @@ def generateRuby(classdir):
 
 
 def main():
+    start = time.time()
     classdir = PyClassDirectory()
     generateRuby(classdir)
+    print 'Completed in %.2f seconds' % (time.time() - start)
 
 if __name__ == '__main__':
     main()

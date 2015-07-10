@@ -18,17 +18,27 @@ module ACIrb
     class ApicErrorResponse < StandardError
     end
 
-
-    # Desc: initialize a rest client
-    # Returns: does not return anything, but will raise an exception
-    #   if authentication fails
-    # Parameters: accepts a hash of options:
-    #   url : string. URL of APIC
-    #   user : string. User ID for authentication
-    #   password : string. Password for authentication
-    #   debug : true or false. Flag for enabling verbose REST output
-    #   format : 'xml' or 'json'. Defaults to xml
-    #   verify : true or false. verify the SSL certificate. Defaults to disabled
+    # Public: Initializes and establishes an authenticated session with APIC
+    #         REST endpoint
+    #
+    # options - Hash options used to specify connectivity
+    #           attributes (default: {}):
+    #
+    #           :url - string URL of APIC, e.g., https://apic (required)
+    #           :user - string containing User ID for authentication (required)
+    #           :password - string containing Password for
+    #                       authentication (required)
+    #           :debug - boolean true or false for including verbose REST output
+    #                    (default: false)
+    #           :format - string 'xml' or 'json' specifying the format to use
+    #                     for messaging to APIC. (default: xml)
+    #           :verify - boolean true or false for verifying the SSL
+    #                     certificate. (default: false)
+    #
+    # Examples:
+    #    rest = ACIrb::RestClient.new(url: 'https://apic', user: 'admin',
+    #                                 password: 'password', format: 'json',
+    #                                 debug: false)
     def initialize(options = {})
       uri = URI.parse(options[:url])
       @baseurl = '%s://%s:%s' % [uri.scheme, uri.host, uri.port]
@@ -51,12 +61,13 @@ module ACIrb
       authenticate if @user && @password
     end
 
-
-    # Desc: authenticates the REST session with the APIC and receives an
-    #   auth_cookie/token
-    # Returns: does not return anything, but will raise an exception if
-    #   authentication fails
-    # Parameters: does not accept any parameters
+    # Public: Authenticates the REST session with APIC
+    # Sends a aaaLogin message to APIC and updates the following instance
+    # variables:
+    #   @auth_cookie - session cookie
+    #   @refresh_time - session refresh timeout in seconds
+    #
+    # Returns nothing.
     def authenticate
       builder = Nokogiri::XML::Builder.new do |xml|
         xml.aaaUser(name: @user, pwd: @password)
@@ -67,34 +78,39 @@ module ACIrb
       response = @client.post(post_url, body: builder.to_xml)
       puts 'POST RESPONSE: ', response.body if @debug
       doc = Nokogiri::XML(response.body)
-      raise ApicAuthenticationError, 'Authentication error(%s): %s' % [doc.at_css('error')['code'], doc.at_css('error')['text']] \
+      fail ApicAuthenticationError, 'Authentication error(%s): %s' % [doc.at_css('error')['code'], doc.at_css('error')['text']] \
         if doc.at_css('error')
       @auth_cookie = doc.at_css('aaaLogin')['token']
       @refresh_time = doc.at_css('aaaLogin')['refreshTimeoutSeconds']
     end
 
+    # Public: Refreshes an existing RestClient object session
+    # Sends a aaaRefresh message to APIC and updates the following instance
+    # variables:
+    #   @auth_cookie - session cookie
+    #   @refresh_time - session refresh timeout in seconds
+    #
+    # Returns nothing.
     def refresh_session
       get_url = URI.encode(@baseurl.to_s + '/api/mo/aaaRefresh.xml')
       puts 'GET REQUEST', get_url if @debug
       response = @client.get(get_url)
       puts 'GET RESPONSE: ', response.body if @debug
       doc = Nokogiri::XML(response.body)
-      raise ApicAuthenticationError, 'Authentication error(%s): %s' % [doc.at_css('error')['code'], doc.at_css('error')['text']] \
+      fail ApicAuthenticationError, 'Authentication error(%s): %s' % [doc.at_css('error')['code'], doc.at_css('error')['text']] \
         if doc.at_css('error')
       @auth_cookie = doc.at_css('aaaLogin')['token']
       @refresh_time = doc.at_css('aaaLogin')['refreshTimeoutSeconds']
     end
 
-    # Desc: Perform an HTTP POST to the REST interface with the
-    #   parameters provided
-    # Returns: an array of managed object containing the parsed result
-    # Parameters: a single hash array is accepted, with the following keys:
-    #   data : This is a string containing the data to be posted. This
-    #      should be well formed XML that the APIC REST interface can interpret.
-    #      No validation is done
-    #   url : this is the path to the REST interface method being
-    #      utilized, typicalliy /api/mo/.xml
-
+    # Internal: Posts data to the APIC REST interface
+    #
+    # options - Hash options for defining post parameters (default: {})
+    #           :url - relative URL for request (required)
+    #           :data - post payload to be included in the request (required)
+    #
+    # Returns results of parse_response, which will be the parsed results of
+    # the XML or JSON payload represented as ACIrb::MO objects
     def post(options)
       post_url = URI.encode(@baseurl.to_s + options[:url].to_s)
 
@@ -113,13 +129,13 @@ module ACIrb
       parse_response(response)
     end
 
-    # Desc: Perform a HTTP GET to the REST interface with the
-    #   parameters provided
-    # Returns: an array of managed object containing the parsed result
-    # Parameters: a single hash array is accepted, with the following keys:
-    #   url : this is the path to the REST interface method being utilized,
-    #     typicalliy /api/mo/.xml with some parameters
-
+    # Internal: Queries the APIC REST API for data
+    #
+    # options - Hash options for defining get parameters (default: {})
+    #           :url - relative URL for request (required)
+    #
+    # Returns results of parse_response, which will be the parsed results of
+    # the XML or JSON payload represented as ACIrb::MO objects
     def get(options)
       get_url = URI.encode(@baseurl.to_s + options[:url].to_s)
 
@@ -130,19 +146,28 @@ module ACIrb
       parse_response(response)
     end
 
+    # Internal: Parses for error responses in APIC response payload
+    #
+    # doc - Nokigiri XML document or Hash array containing well formed
+    #       APIC response payload (required)
     def parse_error(doc)
       if format == 'xml'
-        raise ApicErrorResponse, 'Error response from APIC (%s): "%s"' % \
+        fail ApicErrorResponse, 'Error response from APIC (%s): "%s"' % \
           [doc.at_css('error')['code'], doc.at_css('error')['text']] \
           if doc.at_css('error')
       elsif format == 'json'
-        raise ApicErrorResponse, 'Error response from APIC (%s): "%s"' % \
+        fail ApicErrorResponse, 'Error response from APIC (%s): "%s"' % \
           [doc['imdata'][0]['error']['attributes']['code'].to_s, \
            doc['imdata'][0]['error']['attributes']['text'].to_s] \
            if doc['imdata'].length > 0 && doc['imdata'][0].include?('error')
       end
     end
 
+    # Internal: Parses APIC response payload into ACIrb::MO objects
+    #
+    # response - string containing the XML or JSON payload that will be
+    #            parsed according to the format defined at instance creation
+    #            (required)
     def parse_response(response)
       if format == 'xml'
         xml_data = response.body
@@ -174,15 +199,44 @@ module ACIrb
       end
     end
 
+    # Public: Sends a query to APIC and returns the matching MO objects
+    #
+    # query_obj - ACIrb::Query object, typically either ACIrb::DnQuery or
+    #             ACIrb::ClassQuery which contains the query that will be issued
+    #             (required)
+    #
+    # Examples
+    #    dn_query = ACIrb::DnQuery.new('uni/tn-common')
+    #    dn_query.subtree = 'full'
+    #    mos = rest.query(dn_query)
+    #
+    # Returns array of ACIrb::MO objects for the query
     def query(query_obj)
       query_uri = query_obj.uri(@format)
       get(url: query_uri)
     end
 
+    # Public: Sends an event subscription query to APIC
+    #
+    # query_obj - ACIrb::Query object, typically either ACIrb::DnQuery or
+    #             ACIrb::ClassQuery which contains the query that will be
+    #             issued. This query will have the .subscribe property set
+    #             to "yes" as part of the subscription process (required)
+    #
+    # Examples
+    #    # subscribe to all changes on fvCEp end points on fabric
+    #    # but restrict the results of the query to only include 1
+    #    # as to reduce the initial subscription time
+    #    class_query = ACIrb::ClassQuery.new('fvCEp')
+    #    class_query.page_size = '1'
+    #    class_query.page = '0'
+    #    subscription_id = rest.subscribe(class_query)
+    #
+    # Returns the subscription ID for the newly registered subscription
     def subscribe(query_obj)
       query_obj.subscribe = 'yes'
       query_uri = query_obj.uri(@format)
-      
+
       get_url = URI.encode(@baseurl.to_s + query_uri.to_s)
 
       puts 'GET REQUEST', get_url if @debug
@@ -204,18 +258,37 @@ module ACIrb
       subscriptionId
     end
 
+    # Public: Refreshes an existing subscription query
+    #
+    # subscription_id - string containing the subscription ID for a previously
+    #                   subscribed to query
+    #
+    # Examples
+    #    class_query = ACIrb::ClassQuery.new('fvCEp')
+    #    class_query.page_size = '1'
+    #    class_query.page = '0'
+    #    subscription_id = rest.subscribe(class_query)
+    #    sleep(50)
+    #    rest.refresh_subscription(subcription_id)
+    #
+    # Returns nothing.
     def refresh_subscription(subscription_id)
       query_uri = '/api/subscriptionRefresh.%s?id=%s' % [@format, subscription_id]
       get(url: query_uri)
     end
 
-    # Desc: A helper function that will lookup a given DN via the
-    #   APIC REST interface
-    # Returns: Returns Mo for match if one exists, otherwise nil
-    # Parameters:
-    #   dn : string. the distinguished name to query
-    #   options : hash. set query parameters
-
+    # Public: Helper function that performs a simple lookup on a Dn
+    #
+    # dn - string containing distinguished name for the object to query
+    #      (required)
+    # options - Hash options for defining query options (default: {})
+    #           :subtree - specifies the subtree query options, which can be
+    #                      children, full or self
+    # Examples
+    #    mo = rest.lookupByDn('uni/tn-common', subtree: 'full')
+    #
+    # Returns a single ACIrb::MO object or nil if no response for the query
+    # is received
     def lookupByDn(dn, options = {})
       subtree = options[:subtree]
       dn_query = ACIrb::DnQuery.new(dn)
@@ -229,6 +302,17 @@ module ACIrb
       end
     end
 
+    # Public: Helper function that performs a simple lookup on a Class
+    #
+    # cls - string containing the class name to query (required)
+    # options - Hash options for defining query options (default: {})
+    #           :subtree - specifies the subtree query options, which can be
+    #                      children, full or self
+    # Examples
+    #    # return all L1 physical interfaces on the fabric with complete subtree
+    #    mo = rest.lookupByClass('l1PhysIf', subtree: 'full')
+    #
+    # Returns an array of ACIrb::MO objects for the query
     def lookupByClass(cls, options = {})
       subtree = options[:subtree]
       cls_query = ACIrb::ClassQuery.new(cls)

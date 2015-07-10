@@ -29,6 +29,7 @@ module ACIrb
       element.attributes.each do |k, v|
         create_attr[k.to_s] = v.to_s
       end
+      create_attr[:mark_dirty] = false
       mo = mo.new(parent_mo, create_attr)
 
       element.elements.each do |e|
@@ -68,12 +69,13 @@ module ACIrb
 
       mo = ACIrb.const_get(ACIrb::CLASSMAP[class_name])
 
-      attributes = {}
+      create_attr = {}
       (values['attributes'] || {}).each do |propName, propVal|
-        attributes[propName.to_s] = propVal
+        create_attr[propName.to_s] = propVal
       end
 
-      mo = mo.new(parent_mo, attributes)
+      create_attr[:mark_dirty] = false
+      mo = mo.new(parent_mo, create_attr)
 
       (values['children'] || []).each do |child|
         mo.add_child(get_mo_from_hash(mo, child))

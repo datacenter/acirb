@@ -100,7 +100,7 @@ module ACIrb
 
       return prefix_match if matches
 
-      return nil
+      nil
     end
 
     def self.get_class_from_child_prefix(parent_mo, rn_str)

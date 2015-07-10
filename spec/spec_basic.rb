@@ -9,15 +9,16 @@ password = ENV['APIC_PASSWORD']
 # password = 'wrong'
 
 testtenant = 'rubysdktest'
+# formats = ['xml', 'json']
 formats = %w(xml json)
 debug = false
 
-RSpec.describe 'ACIrb Basic' do
-  formats.each do |format|
+formats.each do |format|
+  RSpec.describe 'ACIrb Basic' do
     before(:each) do
-      pending 'No apic target defined' unless apicuri and username and password
-      @rest = ACIrb::RestClient.new(url: apicuri, user: username,
-                                        password: password, debug: debug)
+      pending 'No apic target defined' unless apicuri && username && password
+      @rest = ACIrb::RestClient.new(url: apicuri, user: username, format: format,
+                                    password: password, debug: debug)
     end
 
     it '' + format + ' Creates a tenant named test and verifies its existence' do
@@ -58,8 +59,35 @@ RSpec.describe 'ACIrb Basic' do
       expect(mo.dn).to eq('uni/tn-%s/ap-%s/epg-%s' % [testtenant, 'app1', 'epg1'])
     end
 
+    it '' + format + ' Modify the description of an EPG' do
+      descr = 'This is a new description'
+      mo = @rest.lookupByDn('uni/tn-%s/ap-%s/epg-%s' % [testtenant, 'app1', 'epg1'], subtree: 'full')
+      mo.descr = descr
+      mo.create(@rest)
+      mo = @rest.lookupByDn('uni/tn-%s/ap-%s/epg-%s' % [testtenant, 'app1', 'epg1'], subtree: 'full')
+      expect(mo.descr).to eq(descr)
+      expect(mo.rn).to eq('epg-epg1')
+      expect(mo.dn).to eq('uni/tn-%s/ap-%s/epg-%s' % [testtenant, 'app1', 'epg1'])
+    end
+
     it '' + format + ' Lookup by class for all EPGs with subtree' do
       @rest.lookupByClass('fvAEPg', subtree: 'full')
+    end
+
+    it '' + format + ' Creates a static path binding' do
+      epg = @rest.lookupByDn('uni/tn-%s/ap-%s/epg-%s' % [testtenant, 'app1', 'epg1'], subtree: 'full')
+      path = @rest.lookupByClass('fabricPathEp')[0]
+      pathatt = ACIrb::FvRsPathAtt.new(epg, tDn: path.dn, encap: 'vlan-101')
+      pathatt.create(@rest)
+    end
+
+    it '' + format + ' Delete static path binding' do
+      epg = @rest.lookupByDn('uni/tn-%s/ap-%s/epg-%s' % [testtenant, 'app1', 'epg1'], subtree: 'full')
+      dnq = ACIrb::DnQuery.new(epg.dn)
+      dnq.class_filter = 'fvRsPathAtt'
+      dnq.query_target = 'children'
+      pathatt = @rest.query(dnq)[0]
+      pathatt.destroy(@rest)
     end
 
     it '' + format + ' Lookup by class for all Tenants with subtree' do
@@ -102,6 +130,5 @@ RSpec.describe 'ACIrb Basic' do
       tenant.destroy(@rest)
       expect(tenant.exists(@rest)).to eq(false)
     end
-
   end
 end
