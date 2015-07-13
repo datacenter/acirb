@@ -1,9 +1,17 @@
 # Overview
 ACIrb is a Ruby implementation of the Cisco APIC REST API. It enables direct manipulation of the Management Information Tree (MIT) through the REST API using standard ruby language options, allowing programmatic interaction with APIC to configure all aspects of the fabric. The project aims to be a thin layer over the object model, so creating code is simple. 
 # Installation
-If you want the simple version, the gem for this is available on rubygems, so you can install via ruby gems:
+If you want the simple version, the gem for this is available on rubygems, so you can install via ruby gems. To install the latest version use the below command:
 ```
 gem install acirb
+```
+If you want or need to install a specific version (such as if you are running APIC 1.0.4o and need to install ACIrb for that version), you can specify the -v tag to select a version of a gem:
+```
+# Install ACIrb for APIC 1.0.4o
+gem install acirb -v 1.0.4.1
+
+# Install ACIrb for APIC 1.1.1j
+gem install acirb -v 1.1.1.1
 ```
 If you've checked out this repo and want to install the gem from the repo, you can also install it from a .gem file:
 ```
