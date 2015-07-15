@@ -39,7 +39,7 @@ def getProps(pyClassDict):
                 bo0l = 'true' if getattr(flags, '_{}'.format(flag)) else 'false'
                 propflags.append("'{}' => {}".format(flag, bo0l))
         prop_entries.append("'{}' => {{ {} }}".format(prop, ', '.join(propflags)))
-    return '{{ {} }}'.format(',\n'.join(prop_entries))
+    return '{{ {} }}'.format(',\n      '.join(prop_entries))
     # entries = ["%s => {".format(cls, props.get('isAdmin')) for cls,props in pyClassDict['_props'].items()]
 
 
