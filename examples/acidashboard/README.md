@@ -1,13 +1,16 @@
 # Installation
-- Make sure you have ruby gems installed https://rubygems.org/pages/download
-- Next, install dashing following the steps on the website http://shopify.github.io/dashing/.
-  Or, just run the following at your terminal. 
-  Note: you may need to prefix this with sudo depending on your installation
+- Make sure you have ruby gems installed  
+  - https://rubygems.org/pages/download
+- Next, install dashing following the steps on the website  
+  - http://shopify.github.io/dashing/  
+  
+  Or, just run the following at your terminal.  
+  **Note**: you may need to prefix this with sudo depending on your installation  
 ```
 gem install dashing bundle
-gem install --pre acirb
-```    
-- Change into the acirb/examples/acidashboard folder
+gem install acirb
+```
+- Change into the acirb/examples/acidashboard folder  
 ```
 cd acirb/examples/acidashboard
 ```
