@@ -80,6 +80,7 @@ module ACIrb
       doc = Nokogiri::XML(response.body)
       fail ApicAuthenticationError, 'Authentication error(%s): %s' % [doc.at_css('error')['code'], doc.at_css('error')['text']] \
         if doc.at_css('error')
+      fail ApicErrorResponse, 'Unexpected HTTP Error response code(%s): %s' % [response.code, response.body] if response.code != 200
       @auth_cookie = doc.at_css('aaaLogin')['token']
       @refresh_time = doc.at_css('aaaLogin')['refreshTimeoutSeconds']
     end
