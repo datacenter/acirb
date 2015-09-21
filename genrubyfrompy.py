@@ -175,7 +175,7 @@ end
 
 def getRubyAutoLoad(autoLoaderMap):
 
-    rubyAutoLoad = '\n'.join(['  ACIrb.autoload(\'{0}\', \'ACIrb/{1}\')'.format(
+    rubyAutoLoad = '\n'.join(['  ACIrb.autoload(\'{0}\', \'acirb/{1}\')'.format(
         rubyClass, rubyFile) for rubyClass, rubyFile in autoLoaderMap.items()])
 
     rubyCode = Template("""# auto-generated code

@@ -5,7 +5,11 @@
 #
 # Use this after downloading this package and if you don't have the correct pysdk
 #
-. env.sh
+if [ -z $1 ] ; then
+	source env.sh
+else
+	source $1
+fi
 mkdir -p pysdk
 cd pysdk
 ssh admin@$IP \

@@ -1,3 +1,9 @@
+# Prerequisites
+- On Ubuntu, you will need to run the following to get some dependencies
+```
+sudo apt-get install ruby-dev ruby-libxml zlib1g-dev nodejs
+```
+
 # Installation
 - Make sure you have ruby gems installed  
   - https://rubygems.org/pages/download
