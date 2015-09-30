@@ -113,7 +113,7 @@ module ACIrb
     # Returns results of parse_response, which will be the parsed results of
     # the XML or JSON payload represented as ACIrb::MO objects
     def post(options)
-      post_url = URI.encode(@baseurl.to_s + options[:url].to_s)
+      post_url = URI.encode(@baseurl.to_s + options[:url].to_s, /[^\-_.!~*'()a-zA-Z\d;\/?:@&=+$,]/)
 
       data = options[:data]
       if @format == 'xml'
@@ -138,7 +138,7 @@ module ACIrb
     # Returns results of parse_response, which will be the parsed results of
     # the XML or JSON payload represented as ACIrb::MO objects
     def get(options)
-      get_url = URI.encode(@baseurl.to_s + options[:url].to_s)
+      get_url = URI.encode(@baseurl.to_s + options[:url].to_s, /[^\-_.!~*'()a-zA-Z\d;\/?:@&=+$,]/)
 
       puts 'GET REQUEST', get_url if @debug
       response = @client.get(get_url)
@@ -238,7 +238,7 @@ module ACIrb
       query_obj.subscribe = 'yes'
       query_uri = query_obj.uri(@format)
 
-      get_url = URI.encode(@baseurl.to_s + query_uri.to_s)
+      get_url = URI.encode(@baseurl.to_s + query_uri.to_s, /[^\-_.!~*'()a-zA-Z\d;\/?:@&=+$,]/)
 
       puts 'GET REQUEST', get_url if @debug
       response = @client.get(get_url)
