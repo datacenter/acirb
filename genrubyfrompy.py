@@ -232,7 +232,7 @@ def generateRuby(classdir):
         os.path.abspath(
             os.path.dirname(__file__)),
         'lib',
-        'ACIrb')
+        'acirb')
 
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -248,7 +248,7 @@ def generateRuby(classdir):
             os.path.abspath(
                 os.path.dirname(__file__)),
             'lib',
-            'ACIrb',
+            'acirb',
             pkgname +
             '.rb')
 
