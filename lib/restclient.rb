@@ -104,6 +104,16 @@ module ACIrb
       @refresh_time = doc.at_css('aaaLogin')['refreshTimeoutSeconds']
     end
 
+    # Internal: Escape URI before using with APIC REST interface
+    # 
+    # uri - URI to escape
+    #
+    # Returns escaped URI as string
+
+    def escape(uri)
+      return URI.encode(uri, /[^\-_.!~*'()a-zA-Z\d;\/?:@&=+$,]/)
+    end
+
     # Internal: Posts data to the APIC REST interface
     #
     # options - Hash options for defining post parameters (default: {})
@@ -113,7 +123,7 @@ module ACIrb
     # Returns results of parse_response, which will be the parsed results of
     # the XML or JSON payload represented as ACIrb::MO objects
     def post(options)
-      post_url = URI.encode(@baseurl.to_s + options[:url].to_s)
+      post_url = self.escape(@baseurl.to_s + options[:url].to_s)
 
       data = options[:data]
       if @format == 'xml'
@@ -138,7 +148,7 @@ module ACIrb
     # Returns results of parse_response, which will be the parsed results of
     # the XML or JSON payload represented as ACIrb::MO objects
     def get(options)
-      get_url = URI.encode(@baseurl.to_s + options[:url].to_s)
+      get_url = self.escape(@baseurl.to_s + options[:url].to_s)
 
       puts 'GET REQUEST', get_url if @debug
       response = @client.get(get_url)
@@ -238,7 +248,7 @@ module ACIrb
       query_obj.subscribe = 'yes'
       query_uri = query_obj.uri(@format)
 
-      get_url = URI.encode(@baseurl.to_s + query_uri.to_s)
+      get_url = self.escape(@baseurl.to_s + query_uri.to_s)
 
       puts 'GET REQUEST', get_url if @debug
       response = @client.get(get_url)
