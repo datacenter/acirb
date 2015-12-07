@@ -1,4 +1,3 @@
-lib/acirb/*.rb
 lib/autoloadmap.rb
 lib/lookup.rb
 *.gem
