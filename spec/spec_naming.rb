@@ -53,7 +53,7 @@ RSpec.describe 'ACIrb Naming' do
   end
 
   it 'Nested: Have a rn where it doesn\'t belong' do
-    expect { ACIrb::Naming.get_mo_from_dn('uni/epg-common') }.to raise_error
+    expect { ACIrb::Naming.get_mo_from_dn('uni/epg-common') }.to raise_error(RuntimeError)
   end
 
   it 'Complex Dn' do

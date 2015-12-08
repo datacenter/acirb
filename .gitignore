@@ -1,6 +1,6 @@
-lib/acirb/*.rb
-lib/autoloadmap.rb
-lib/lookup.rb
+lib/acirb/model/*.rb
+lib/acirb/autoloadmap.rb
+lib/acirb/lookup.rb
 *.gem
 coverage
 pysdk

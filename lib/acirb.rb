@@ -1,12 +1,12 @@
-require 'autoloadmap'
-require 'loader'
-require 'lookup'
-require 'mo'
-require 'naming'
-require 'restclient'
-require 'version'
-require 'query'
-require 'events'
+require 'acirb/autoloadmap'
+require 'acirb/loader'
+require 'acirb/lookup'
+require 'acirb/mo'
+require 'acirb/naming'
+require 'acirb/restclient'
+require 'acirb/version'
+require 'acirb/query'
+require 'acirb/events'
 
 module ACIrb
 end

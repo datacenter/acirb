@@ -1,4 +1,4 @@
-require 'restclient'
+require 'acirb/restclient'
 require 'websocket'
 require 'socket'
 require 'openssl'

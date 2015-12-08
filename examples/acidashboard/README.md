@@ -13,7 +13,7 @@ sudo apt-get install ruby-dev ruby-libxml zlib1g-dev nodejs
   Or, just run the following at your terminal.  
   **Note**: you may need to prefix this with sudo depending on your installation  
 ```
-gem install dashing bundle
+gem install dashing bundler
 gem install acirb
 ```
 - Change into the acirb/examples/acidashboard folder  
