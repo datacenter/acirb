@@ -163,7 +163,7 @@ def getRubyClass(pyClassDict):
 
 def getRubyPackage(classDef):
     rubyCode = Template("""# auto-generated code
-require 'mo'
+require 'acirb/mo'
 module ACIrb
 $rubyClasses
 end
@@ -175,7 +175,7 @@ end
 
 def getRubyAutoLoad(autoLoaderMap):
 
-    rubyAutoLoad = '\n'.join(['  ACIrb.autoload(\'{0}\', \'acirb/{1}\')'.format(
+    rubyAutoLoad = '\n'.join(['  ACIrb.autoload(\'{0}\', \'acirb/model/{1}\')'.format(
         rubyClass, rubyFile) for rubyClass, rubyFile in autoLoaderMap.items()])
 
     rubyCode = Template("""# auto-generated code
@@ -231,8 +231,7 @@ def generateRuby(classdir):
     directory = os.path.join(
         os.path.abspath(
             os.path.dirname(__file__)),
-        'lib',
-        'acirb')
+        'lib', 'acirb', 'model')
 
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -247,10 +246,7 @@ def generateRuby(classdir):
         fileName = os.path.join(
             os.path.abspath(
                 os.path.dirname(__file__)),
-            'lib',
-            'acirb',
-            pkgname +
-            '.rb')
+            'lib', 'acirb', 'model', pkgname + '.rb')
 
         # Create the package 
         with open(fileName, 'w') as f:
@@ -261,8 +257,7 @@ def generateRuby(classdir):
     fileName = os.path.join(
         os.path.abspath(
             os.path.dirname(__file__)),
-        'lib',
-        'lookup.rb')
+        'lib', 'acirb', 'lookup.rb')
     with open(fileName, 'w') as f:
         f.write(getRubyClassMap(classMap))
 
@@ -270,8 +265,7 @@ def generateRuby(classdir):
     fileName = os.path.join(
         os.path.abspath(
             os.path.dirname(__file__)),
-        'lib',
-        'autoloadmap.rb')
+        'lib', 'acirb', 'autoloadmap.rb')
     with open(fileName, 'w') as f:
         f.write(getRubyAutoLoad(autoLoaderMap))
 

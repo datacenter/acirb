@@ -1,4 +1,4 @@
-require 'restclient'
+require 'acirb/restclient'
 
 # rubocop:disable ClassLength
 # rubocop:disable FormatString

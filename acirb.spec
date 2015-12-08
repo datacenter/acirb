@@ -1,4 +1,4 @@
-require './lib/version'
+require './lib/acirb/version'
 
 Gem::Specification.new do |s|
   s.name        = 'acirb'
