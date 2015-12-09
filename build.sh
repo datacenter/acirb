@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "Generating ruby model"
+echo "Generating ruby model using genrubyfrompy.py"
 python genrubyfrompy.py || (echo "Failed to generate ruby model"; exit 1)
 echo "Building gem"
 gem build acirb.spec || (echo "Failed to build gem"; exit 1)
