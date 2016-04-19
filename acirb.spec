@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.date        = Time.new().strftime('%Y-%m-%d')
   s.summary     = 'ACIrb - Cisco APIC Ruby SDK'
   s.description = 'Cisco APIC Ruby SDK'
-  s.authors     = ['Paul Lesiak']
+  s.authors     = ['Paul Lesiak', 'Jerrod Carpenter']
   s.email       = 'palesiak@cisco.com'
   s.files       = Dir.glob('{lib}/*')
   s.files       = Dir.glob('{lib}/**/*')
