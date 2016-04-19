@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 #
 # This script will ssh into the APIC IP below, and download the pysdk directories
 # trying a number of different locations, hoping it finds at least one that works
@@ -12,8 +12,8 @@ else
 fi
 mkdir -p pysdk
 cd pysdk
-ssh admin@$IP \
+ssh $APIC_USERNAME@$IP \
 'cd /controller/ishell ||
- cd /controller/mgmt ; 
+ cd /controller/mgmt ;
  tar zcf - insieme' | \
 tar zxf -
